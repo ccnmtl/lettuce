@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = version = '0.2.20'
+__version__ = version = '0.2.23'
 
 release = 'kryptonite'
 
@@ -41,12 +41,13 @@ from lettuce.decorators import step, steps
 from lettuce.registry import call_hook
 from lettuce.registry import STEP_REGISTRY
 from lettuce.registry import CALLBACK_REGISTRY
-from lettuce.exceptions import StepLoadingError
+from lettuce.exceptions import StepLoadingError, LettuceRunnerError
 from lettuce.plugins import (
     xunit_output,
     subunit_output,
     autopdb,
     smtp_mail_queue,
+    jsonreport_output,
 )
 from lettuce import fs
 from lettuce import exceptions
@@ -80,7 +81,7 @@ except Exception as e:
 
         sys.stderr.write(string)
         sys.stderr.write(exceptions.traceback.format_exc(e))
-        raise SystemExit(1)
+        raise LettuceRunnerError(string)
 
 
 class Runner(object):
@@ -93,6 +94,7 @@ class Runner(object):
                  verbosity=0, no_color=False, random=False,
                  enable_xunit=False, xunit_filename=None,
                  enable_subunit=False, subunit_filename=None,
+                 enable_jsonreport=False, jsonreport_filename=None,
                  tags=None, failfast=False, auto_pdb=False,
                  smtp_queue=None, root_dir=None):
 
@@ -144,6 +146,9 @@ class Runner(object):
 
         if enable_subunit:
             subunit_output.enable(filename=subunit_filename)
+
+        if enable_jsonreport:
+            jsonreport_output.enable(filename=jsonreport_filename)
 
         reload(output)
 
@@ -210,6 +215,6 @@ class Runner(object):
             call_hook('after', 'all', total)
 
             if failed:
-                raise SystemExit(2)
+                raise LettuceRunnerError("Test failed.")
 
             return total

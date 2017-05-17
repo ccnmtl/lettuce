@@ -16,18 +16,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import sys
+import traceback
 import django
 from distutils.version import StrictVersion
 from optparse import make_option
 from django.conf import settings
 from django.core.management import call_command
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.test.utils import setup_test_environment
 from django.test.utils import teardown_test_environment
 
 from lettuce import Runner
 from lettuce import registry
 from lettuce.core import SummaryTotalResults
+from lettuce.exceptions import LettuceRunnerError
 
 from lettuce.django import harvest_lettuces, get_server
 from lettuce.django.server import LettuceServerException
@@ -36,7 +38,7 @@ from lettuce.django.server import LettuceServerException
 class Command(BaseCommand):
     help = u'Run lettuce tests all along installed apps'
     args = '[PATH to feature file or folder]'
-    requires_model_validation = False
+    requires_model_validation = requires_system_checks = False
 
     option_list = BaseCommand.option_list + (
         make_option('-a', '--apps', action='store', dest='apps', default='',
@@ -95,6 +97,18 @@ class Command(BaseCommand):
                     default=None,
                     help='Write Subunit to this file. Defaults to subunit.bin'),
 
+        make_option('--with-jsonreport',
+                    action='store_true',
+                    dest='enable_jsonreport',
+                    default=False,
+                    help='Output JSON test results to a file'),
+
+        make_option('--jsonreport-file',
+                    action='store',
+                    dest='jsonreport_file',
+                    default=None,
+                    help='Write JSON report to this file. Defaults to lettucetests.json'),
+
         make_option("--failfast", dest="failfast", default=False,
                     action="store_true", help='Stop running in the first failure'),
 
@@ -125,9 +139,6 @@ class Command(BaseCommand):
                               default=False,
                               help="Don't colorize the command output.")
         return parser
-
-    def stopserver(self, failed=False):
-        raise SystemExit(int(failed))
 
     def get_paths(self, args, apps_to_run, apps_to_avoid):
         if args:
@@ -172,9 +183,12 @@ class Command(BaseCommand):
             self._testrunner.setup_test_environment()
             self._old_db_config = self._testrunner.setup_databases()
 
-            call_command('syncdb', verbosity=0, interactive=False,)
-            if migrate_south:
-               call_command('migrate', verbosity=0, interactive=False,)
+            if StrictVersion(django.get_version()) < StrictVersion('1.7'):
+                call_command('syncdb', verbosity=0, interactive=False,)
+                if migrate_south:
+                   call_command('migrate', verbosity=0, interactive=False,)
+            else:
+                call_command('migrate', verbosity=0, interactive=False,)
 
         settings.DEBUG = options.get('debug', False)
 
@@ -185,7 +199,7 @@ class Command(BaseCommand):
             try:
                 server.start()
             except LettuceServerException as e:
-                raise SystemExit(e)
+                raise CommandError("Couldn't start Django server: %s" % e)
 
         os.environ['SERVER_NAME'] = str(server.address)
         os.environ['SERVER_PORT'] = str(server.port)
@@ -207,8 +221,10 @@ class Command(BaseCommand):
                                 verbosity, no_color,
                                 enable_xunit=options.get('enable_xunit'),
                                 enable_subunit=options.get('enable_subunit'),
+                                enable_jsonreport=options.get('enable_jsonreport'),
                                 xunit_filename=options.get('xunit_file'),
                                 subunit_filename=options.get('subunit_file'),
+                                jsonreport_filename=options.get('jsonreport_file'),
                                 tags=tags, failfast=failfast, auto_pdb=auto_pdb,
                                 smtp_queue=smtp_queue)
 
@@ -219,12 +235,11 @@ class Command(BaseCommand):
                 results.append(result)
                 if not result or result.steps != result.steps_passed:
                     failed = True
-        except SystemExit as e:
-            failed = e.code
+        except LettuceRunnerError:
+            failed = True
 
         except Exception as e:
             failed = True
-            import traceback
             traceback.print_exc(e)
 
         finally:
@@ -238,4 +253,5 @@ class Command(BaseCommand):
             teardown_test_environment()
             server.stop(failed)
 
-            raise SystemExit(int(failed))
+            if failed:
+                raise CommandError("Lettuce tests failed.")

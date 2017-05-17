@@ -1,8 +1,7 @@
 # lettuce
-> Version 0.2.20 - kryptonite
+> Version 0.2.23 - kryptonite
 
 [![Build Status](https://secure.travis-ci.org/gabrielfalcao/lettuce.png)](http://travis-ci.org/gabrielfalcao/lettuce)
-[![tip for next commit](http://tip4commit.com/projects/132.svg)](http://tip4commit.com/projects/132)
 
 ## On release names
 
@@ -38,7 +37,7 @@ all them are used within lettuce tests
     > mkvirtualenv lettuce
     > workon lettuce
     > pip install -r requirements.txt
-note this uses [virtualenvwrapper](http://virtualenvwrapper.readthedocs.org/en/latest/) to save some virtualenv handling hassle. you can also use virtualenv the regular way.
+note this uses [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/) to save some virtualenv handling hassle. you can also use virtualenv the regular way.
 ## or just install manually:
 
     > sudo pip install -r requirements.txt

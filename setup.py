@@ -31,15 +31,12 @@ def get_packages():
 
 required_modules = ['sure', 'fuzzywuzzy', 'python-subunit']
 
-if sys.version_info[:2] < (2, 6):
-    required_modules.append('multiprocessing')
-
 if os.name.lower() == 'nt':
     required_modules.append('colorama')
 
 setup(
     name='lettuce',
-    version='0.2.21.ccnmtl',  # vender specific
+    version='0.2.24.ccnmtl',
     description='Behaviour Driven Development for python',
     author='Gabriel Falcao',
     author_email='gabriel@nacaolivre.org',
