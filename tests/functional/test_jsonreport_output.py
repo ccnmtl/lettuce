@@ -17,7 +17,7 @@
 #
 # REMOVE THIS
 
-from __future__ import unicode_literals
+
 from contextlib import contextmanager
 import json
 import os
@@ -101,8 +101,8 @@ def test_jsonreport_output_with_no_steps():
 @with_setup(prepare_stdout, registry.clear)
 def test_jsonreport_output_with_background_section():
     'Test jsonreport output with a background section in the feature'
-    @lettuce.step(ur'the variable "(\w+)" holds (\d+)')
-    @lettuce.step(ur'the variable "(\w+)" is equal to (\d+)')
+    @lettuce.step(r'the variable "(\w+)" holds (\d+)')
+    @lettuce.step(r'the variable "(\w+)" is equal to (\d+)')
     def just_pass(step, *args):
         pass
 
@@ -140,7 +140,7 @@ OUTPUTS = {
                     'undefined': 0
                 }
             },
-           'name': u'one commented scenario',
+           'name': 'one commented scenario',
            'duration': 0,
            "background": None,
            'scenarios': [
@@ -151,7 +151,7 @@ OUTPUTS = {
                     'total': 1,
                     'undefined': 0
                 },
-                'name': u'Do nothing',
+                'name': 'Do nothing',
                 'duration': 0,
                 'outline': None,
                 'steps': [
@@ -163,7 +163,7 @@ OUTPUTS = {
                         'undefined': False
                     },
                     'duration': 0,
-                    'name': u'Given I do nothing'
+                    'name': 'Given I do nothing'
                 }]
             }]
         }],
